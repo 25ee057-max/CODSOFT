@@ -1,0 +1,78 @@
+# ---------------------------------------------------------
+# MOVIE GENRE CLASSIFICATION PROJECT
+# (Done by: Tharunikaa - 1st Year EEE Student)
+# ---------------------------------------------------------
+
+# Step 1: Importing all the libraries we need
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score, classification_report
+
+# ---------------------------------------------------------
+# Step 2: Loading the dataset
+# (Upload your CSV file in Colab and change the name below)
+# ---------------------------------------------------------
+data = pd.read_csv("movies.csv")   # <-- change to your file name
+print("Dataset loaded successfully!")
+print(data.head())
+
+# ---------------------------------------------------------
+# Step 3: Cleaning the data
+# (Removing rows where plot or genre is missing)
+# ---------------------------------------------------------
+data = data.dropna(subset=['plot', 'genre'])
+
+# ---------------------------------------------------------
+# Step 4: Converting genre names into numbers
+# ---------------------------------------------------------
+encoder = LabelEncoder()
+data['genre_encoded'] = encoder.fit_transform(data['genre'])
+
+# ---------------------------------------------------------
+# Step 5: Converting movie plots into TF-IDF vectors
+# (Basically turning text into numbers)
+# ---------------------------------------------------------
+vectorizer = TfidfVectorizer(max_features=5000, stop_words='english')
+X = vectorizer.fit_transform(data['plot'])
+y = data['genre_encoded']
+
+# ---------------------------------------------------------
+# Step 6: Splitting the data for training and testing
+# ---------------------------------------------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# ---------------------------------------------------------
+# Step 7: Training the Naive Bayes model
+# (This model works well for text)
+# ---------------------------------------------------------
+model = MultinomialNB()
+model.fit(X_train, y_train)
+
+# ---------------------------------------------------------
+# Step 8: Predicting on test data
+# ---------------------------------------------------------
+y_pred = model.predict(X_test)
+
+# ---------------------------------------------------------
+# Step 9: Checking accuracy
+# ---------------------------------------------------------
+print("Model Accuracy:", accuracy_score(y_test, y_pred))
+print("\nDetailed Report:\n")
+print(classification_report(y_test, y_pred, target_names=encoder.classes_))
+
+# ---------------------------------------------------------
+# Step 10: Predicting genre for a new movie plot
+# ---------------------------------------------------------
+def predict_genre(plot_text):
+    vector = vectorizer.transform([plot_text])
+    pred = model.predict(vector)[0]
+    return encoder.inverse_transform([pred])[0]
+
+# Example prediction
+sample_plot = "A young girl discovers a magical world and goes on an adventure."
+print("\nPredicted Genre for sample plot:", predict_genre(sample_plot))
