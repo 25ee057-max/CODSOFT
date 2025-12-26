@@ -1,0 +1,54 @@
+# Handwritten Text Generation using Character-Level RNN
+
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, SimpleRNN, Dense
+from tensorflow.keras.utils import to_categorical
+
+# Load dataset (replace with actual handwriting text dataset)
+# Example: text_data = open("handwritten_text.txt").read().lower()
+text_data = "this is an example dataset for handwritten text generation project"
+
+# Create character mapping
+chars = sorted(list(set(text_data)))
+char_to_idx = {c: i for i, c in enumerate(chars)}
+idx_to_char = {i: c for i, c in enumerate(chars)}
+
+# Convert text to integer sequence
+seq = [char_to_idx[c] for c in text_data]
+
+# Prepare training data
+seq_length = 40
+X = []
+y = []
+for i in range(0, len(seq) - seq_length):
+    X.append(seq[i:i+seq_length])
+    y.append(seq[i+seq_length])
+
+X = np.array(X)
+y = to_categorical(y, num_classes=len(chars))
+
+# Build RNN model
+model = Sequential([
+    Embedding(len(chars), 64, input_length=seq_length),
+    SimpleRNN(128, return_sequences=False),
+    Dense(len(chars), activation='softmax')
+])
+
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.fit(X, y, batch_size=128, epochs=20)
+
+# Text generation function
+def generate_text(seed_text, length=200):
+    generated = seed_text
+    for _ in range(length):
+        seq_input = [char_to_idx[c] for c in generated[-seq_length:]]
+        seq_input = np.array(seq_input).reshape(1, -1)
+        pred = model.predict(seq_input, verbose=0)
+        next_char = idx_to_char[np.argmax(pred)]
+        generated += next_char
+    return generated
+
+# Example usage
+print(generate_text("this is", length=100))
