@@ -1,0 +1,65 @@
+# Spam SMS Detection Project
+
+# Libraries
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+
+# Load dataset (replace with actual dataset path)
+# Example: Kaggle "SMS Spam Collection Dataset"
+data = pd.read_csv("spam.csv", encoding="latin-1")
+
+# Keep only relevant columns
+data = data[['v1','v2']]
+data.columns = ['label','message']
+
+# Encode labels: ham = 0, spam = 1
+data['label'] = data['label'].map({'ham':0, 'spam':1})
+
+# Features and target
+X = data['message']
+y = data['label']
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+
+# TF-IDF Vectorization
+tfidf = TfidfVectorizer(stop_words='english', max_features=5000)
+X_train_tfidf = tfidf.fit_transform(X_train)
+X_test_tfidf = tfidf.transform(X_test)
+
+# Naive Bayes
+nb_model = MultinomialNB()
+nb_model.fit(X_train_tfidf, y_train)
+y_pred_nb = nb_model.predict(X_test_tfidf)
+
+print("Naive Bayes Results:")
+print(classification_report(y_test, y_pred_nb))
+print("Accuracy:", accuracy_score(y_test, y_pred_nb))
+
+# Logistic Regression
+log_model = LogisticRegression(max_iter=1000)
+log_model.fit(X_train_tfidf, y_train)
+y_pred_log = log_model.predict(X_test_tfidf)
+
+print("\nLogistic Regression Results:")
+print(classification_report(y_test, y_pred_log))
+print("Accuracy:", accuracy_score(y_test, y_pred_log))
+
+# Support Vector Machine
+svm_model = LinearSVC()
+svm_model.fit(X_train_tfidf, y_train)
+y_pred_svm = svm_model.predict(X_test_tfidf)
+
+print("\nSupport Vector Machine Results:")
+print(classification_report(y_test, y_pred_svm))
+print("Accuracy:", accuracy_score(y_test, y_pred_svm))
+
+# Confusion Matrix for SVM
+print("\nConfusion Matrix (SVM):")
+print(confusion_matrix(y_test, y_pred_svm))
